@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Life Album - 思い出を地図に</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --black: #000000;
+            --white: #ffffff;
+            --gray-light: #f5f5f5;
+            --gray-mid: #cccccc;
+            --gray-dark: #333333;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            background: var(--white);
+            color: var(--black);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--black);
+            color: var(--white);
+            padding: 1rem;
+            padding-top: calc(1rem + env(safe-area-inset-top));
+            padding-left: max(1rem, env(safe-area-inset-left));
+            padding-right: max(1rem, env(safe-area-inset-right));
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        .header-subtitle {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            margin-top: 0.25rem;
+            letter-spacing: 0.1em;
+        }
+
+        /* Main Container */
+        .container {
+            padding-top: calc(5.5rem + env(safe-area-inset-top));
+            padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
+            min-height: 100vh;
+        }
+
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            border-bottom: 2px solid var(--black);
+            position: sticky;
+            top: calc(4.5rem + env(safe-area-inset-top));
+            background: var(--white);
+            z-index: 100;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 1rem;
+            background: none;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab-button.active {
+            background: var(--black);
+            color: var(--white);
+        }
+
+        .tab-button:not(.active):hover {
+            background: var(--gray-light);
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Memo List */
+        .memo-list {
+            padding: 1rem;
+        }
+
+        .list-controls {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem;
+            padding-bottom: 0;
+            position: sticky;
+            top: calc(6.5rem + env(safe-area-inset-top));
+            background: var(--white);
+            z-index: 50;
+        }
+
+        .control-btn {
+            padding: 0.5rem 1rem;
+            background: var(--white);
+            color: var(--black);
+            border: 2px solid var(--black);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .control-btn:hover {
+            background: var(--black);
+            color: var(--white);
+        }
+
+        .control-btn.active {
+            background: var(--black);
+            color: var(--white);
+        }
+
+        .control-btn.delete-btn {
+            background: var(--black);
+            color: var(--white);
+        }
+
+        .control-btn.delete-btn:hover {
+            background: var(--gray-dark);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .memo-card {
+            background: var(--white);
+            border: 2px solid var(--black);
+            margin-bottom: 1rem;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .memo-card.select-mode {
+            padding-left: 3.5rem;
+        }
+
+        .memo-card.selected {
+            background: var(--gray-light);
+            border-color: var(--gray-dark);
+        }
+
+        .memo-checkbox {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--black);
+            background: var(--white);
+            cursor: pointer;
+            display: none;
+        }
+
+        .memo-card.select-mode .memo-checkbox {
+            display: block;
+        }
+
+        .memo-checkbox.checked {
+            background: var(--black);
+        }
+
+        .memo-checkbox.checked::after {
+            content: '✓';
+            color: var(--white);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        .memo-card:hover {
+            transform: translateX(5px);
+            box-shadow: -5px 5px 0 var(--black);
+        }
+
+        .memo-card.select-mode:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .memo-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 0.5rem;
+        }
+
+        .memo-location {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .memo-distance {
+            font-size: 0.85rem;
+            opacity: 0.6;
+        }
+
+        .memo-date {
+            font-size: 0.75rem;
+            opacity: 0.5;
+        }
+
+        .memo-text {
+            margin: 0.75rem 0;
+            line-height: 1.6;
+        }
+
+        .memo-photos {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+
+        .memo-photo-thumb {
+            aspect-ratio: 1;
+            background: var(--gray-light);
+            border: 1px solid var(--black);
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .memo-photo-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Add Memo Form */
+        .add-memo-section {
+            padding: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .form-input,
+        .form-textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--black);
+            background: var(--white);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus,
+        .form-textarea:focus {
+            outline: none;
+            box-shadow: 4px 4px 0 var(--black);
+            transform: translate(-2px, -2px);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* Map */
+        #map {
+            width: 100%;
+            height: 300px;
+            border: 2px solid var(--black);
+            margin-bottom: 1rem;
+        }
+
+        .map-instructions {
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: var(--gray-light);
+            border-left: 3px solid var(--black);
+        }
+
+        /* Photo Upload */
+        .photo-upload-area {
+            border: 2px dashed var(--black);
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .photo-upload-area:hover {
+            background: var(--gray-light);
+        }
+
+        .photo-upload-area input {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .photo-preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .photo-preview-item {
+            position: relative;
+            aspect-ratio: 1;
+            border: 2px solid var(--black);
+            overflow: hidden;
+        }
+
+        .photo-preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-remove {
+            position: absolute;
+            top: 0.25rem;
+            right: 0.25rem;
+            background: var(--black);
+            color: var(--white);
+            border: none;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 1rem 2rem;
+            background: var(--black);
+            color: var(--white);
+            border: 2px solid var(--black);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background: var(--white);
+            color: var(--black);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 0 var(--black);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 0 var(--black);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 2000;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background: var(--white);
+            border: 3px solid var(--black);
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            background: var(--black);
+            color: var(--white);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--white);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-photo {
+            width: 100%;
+            border: 2px solid var(--black);
+            margin-bottom: 1rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            opacity: 0.2;
+            margin-bottom: 1rem;
+        }
+
+        .empty-text {
+            opacity: 0.5;
+            font-size: 1.1rem;
+        }
+
+        /* Floating Add Button */
+        .floating-add-btn {
+            position: fixed;
+            bottom: calc(1.5rem + env(safe-area-inset-bottom));
+            right: calc(1.5rem + env(safe-area-inset-right));
+            width: 60px;
+            height: 60px;
+            background: var(--black);
+            color: var(--white);
+            border: 3px solid var(--black);
+            border-radius: 50%;
+            font-size: 2rem;
+            cursor: pointer;
+            z-index: 900;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .floating-add-btn:hover {
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+        }
+
+        .floating-add-btn:active {
+            transform: scale(0.95) rotate(90deg);
+        }
+
+        .add-icon {
+            line-height: 1;
+            font-weight: 300;
+        }
+
+        /* Map View Section */
+        .map-view-section {
+            height: calc(100vh - 9rem);
+            position: relative;
+        }
+
+        #mapView {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        #addMap {
+            width: 100%;
+            height: 300px;
+            border: 2px solid var(--black);
+            margin-bottom: 1rem;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            border-top: 2px solid var(--black);
+            display: flex;
+            z-index: 1000;
+        }
+
+        .bottom-nav-item {
+            flex: 1;
+            padding: 0.75rem;
+            background: none;
+            border: none;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .bottom-nav-item.active {
+            background: var(--black);
+            color: var(--white);
+        }
+
+        .bottom-nav-icon {
+            font-size: 1.5rem;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1rem;
+            }
+            
+            .memo-photos {
+                grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--gray-mid);
+            border-top-color: var(--black);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>Life Album</h1>
+        <div class="header-subtitle">思い出を地図に記録する</div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-button active" data-tab="list">リスト</button>
+            <button class="tab-button" data-tab="map">地図</button>
+        </div>
+
+        <!-- Tab: List with Photos -->
+        <div class="tab-content active" id="list-tab">
+            <div class="list-controls">
+                <button class="control-btn" id="selectModeBtn">選択</button>
+                <button class="control-btn delete-btn hidden" id="deleteSelectedBtn">削除</button>
+            </div>
+            <div class="memo-list" id="memoList">
+                <div class="empty-state">
+                    <div class="empty-icon">📸</div>
+                    <div class="empty-text">まだ写真がありません<br>下の+ボタンから追加しましょう</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Map View (Read Only) -->
+        <div class="tab-content" id="map-tab">
+            <div class="map-view-section">
+                <div id="mapView"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Add Button -->
+    <button class="floating-add-btn" id="addButton">
+        <span class="add-icon">+</span>
+    </button>
+
+    <!-- Add Photo Modal -->
+    <div class="modal" id="addPhotoModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>写真を追加</h2>
+                <button class="modal-close" onclick="closeAddModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="memoForm">
+                    <div class="form-group">
+                        <label class="form-label">場所の名前 (任意)</label>
+                        <input type="text" class="form-input" id="locationName" placeholder="例: お気に入りのカフェ">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">メモ (任意)</label>
+                        <textarea class="form-textarea" id="memoText" placeholder="この場所での思い出、感じたこと..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">写真を追加</label>
+                        <div class="photo-upload-area" id="photoUploadArea">
+                            <input type="file" id="photoInput" accept="image/*" multiple>
+                            <div class="upload-icon">📸</div>
+                            <div>タップして写真を追加</div>
+                        </div>
+                        <div class="photo-preview-grid" id="photoPreviewGrid"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="map-instructions">
+                            📍 地図をタップして場所を指定してください
+                        </div>
+                        <div id="addMap"></div>
+                    </div>
+
+                    <button type="submit" class="btn">保存</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Memo Detail -->
+    <div class="modal" id="memoModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">メモ詳細</h2>
+                <button class="modal-close" onclick="closeMemoModal()">✕</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Content will be inserted by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // IndexedDB Setup
+        let db;
+        const DB_NAME = 'LocationMemoApp';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'memos';
+
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => {
+                    db = request.result;
+                    resolve(db);
+                };
+
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        const objectStore = db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+                        objectStore.createIndex('timestamp', 'timestamp', { unique: false });
+                        objectStore.createIndex('location', 'location', { unique: false });
+                    }
+                };
+            });
+        }
+
+        // Image Compression
+        function compressImage(file, maxWidth = 1200, quality = 0.8) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > maxWidth) {
+                            height = (height * maxWidth) / width;
+                            width = maxWidth;
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        canvas.toBlob((blob) => {
+                            if (blob) {
+                                resolve(blob);
+                            } else {
+                                reject(new Error('画像の圧縮に失敗しました'));
+                            }
+                        }, 'image/jpeg', quality);
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Map Setup
+        let addMap; // 追加用の地図
+        let viewMap; // 閲覧用の地図
+        let marker;
+        let viewMarkers = []; // 閲覧用の地図のマーカー配列
+        let selectedLocation = null;
+        let userLocation = { lat: 35.6812, lng: 139.7671 }; // Default: Tokyo
+
+        function initAddMap() {
+            addMap = L.map('addMap').setView([userLocation.lat, userLocation.lng], 13);
+            
+            L.tileLayer('https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=HpNKQ5xDojAJQCsyZMcr', {
+                attribution: '© MapTiler © OpenStreetMap contributors',
+                tileSize: 512,
+                zoomOffset: -1
+            }).addTo(addMap);
+
+            addMap.on('click', (e) => {
+                selectedLocation = { lat: e.latlng.lat, lng: e.latlng.lng };
+                
+                if (marker) {
+                    marker.setLatLng(e.latlng);
+                } else {
+                    marker = L.marker(e.latlng).addTo(addMap);
+                }
+            });
+        }
+
+        function initViewMap() {
+            viewMap = L.map('mapView').setView([userLocation.lat, userLocation.lng], 13);
+            
+            L.tileLayer('https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=HpNKQ5xDojAJQCsyZMcr', {
+                attribution: '© MapTiler © OpenStreetMap contributors',
+                tileSize: 512,
+                zoomOffset: -1
+            }).addTo(viewMap);
+
+            // Load all memos and display them on the map
+            loadMemosOnMap();
+        }
+
+        function loadMemosOnMap() {
+            if (!db || !viewMap) return;
+
+            // Clear existing markers and their event listeners
+            viewMarkers.forEach(marker => {
+                marker.off(); // Remove all event listeners
+                viewMap.removeLayer(marker);
+            });
+            viewMarkers = [];
+
+            const transaction = db.transaction([STORE_NAME], 'readonly');
+            const objectStore = transaction.objectStore(STORE_NAME);
+            const request = objectStore.getAll();
+
+            request.onsuccess = () => {
+                const memos = request.result;
+                
+                memos.forEach(memo => {
+                    const markerIcon = L.divIcon({
+                        className: 'custom-marker',
+                        html: `<div style="background: black; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">📸</div>`,
+                        iconSize: [30, 30]
+                    });
+
+                    const mapMarker = L.marker([memo.location.lat, memo.location.lng], { icon: markerIcon })
+                        .addTo(viewMap);
+                    
+                    // Add popup with photo and info
+                    const photoHtml = memo.photos && memo.photos.length > 0 
+                        ? `<img src="${memo.photos[0]}" style="width: 150px; height: 100px; object-fit: cover; border: 2px solid black; margin-bottom: 0.5rem;">` 
+                        : '';
+                    
+                    const memoTextPreview = memo.memoText ? 
+                        `${memo.memoText.substring(0, 50)}${memo.memoText.length > 50 ? '...' : ''}` : 
+                        '(メモなし)';
+                    
+                    const popupContent = `
+                        <div style="font-family: sans-serif;">
+                            ${photoHtml}
+                            <strong style="display: block; margin-bottom: 0.25rem;">${memo.locationName}</strong>
+                            <div style="font-size: 0.85rem;">${memoTextPreview}</div>
+                            <button id="popup-btn-${memo.id}" style="margin-top: 0.5rem; padding: 0.5rem 1rem; background: black; color: white; border: none; cursor: pointer; width: 100%;">詳細を見る</button>
+                        </div>
+                    `;
+                    
+                    mapMarker.bindPopup(popupContent);
+                    
+                    // Create closure to store listener for this specific marker
+                    (function(memoId) {
+                        let popupBtnListener = null;
+                        
+                        mapMarker.on('popupopen', () => {
+                            const btn = document.getElementById(`popup-btn-${memoId}`);
+                            if (btn && !popupBtnListener) {
+                                popupBtnListener = (e) => {
+                                    e.stopPropagation();
+                                    openMemoModal(memoId);
+                                };
+                                btn.addEventListener('click', popupBtnListener);
+                            }
+                        });
+                        
+                        mapMarker.on('popupclose', () => {
+                            const btn = document.getElementById(`popup-btn-${memoId}`);
+                            if (btn && popupBtnListener) {
+                                btn.removeEventListener('click', popupBtnListener);
+                                popupBtnListener = null;
+                            }
+                        });
+                    })(memo.id);
+
+                    viewMarkers.push(mapMarker);
+                });
+
+                // Fit bounds to show all markers
+                if (viewMarkers.length > 0) {
+                    try {
+                        const group = L.featureGroup(viewMarkers);
+                        viewMap.fitBounds(group.getBounds().pad(0.1));
+                    } catch (error) {
+                        console.warn('地図の範囲調整に失敗しました:', error);
+                    }
+                }
+                
+                // 地図更新時刻を記録
+                if (typeof updateMapTimestamp === 'function') {
+                    updateMapTimestamp();
+                }
+            };
+        }
+
+        // Get user location
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    userLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    if (addMap) addMap.setView([userLocation.lat, userLocation.lng], 13);
+                    if (viewMap) viewMap.setView([userLocation.lat, userLocation.lng], 13);
+                },
+                (error) => {
+                    console.warn('位置情報の取得に失敗しました:', error.message);
+                    // デフォルト位置（東京）を使用
+                }
+            );
+        }
+
+        // Photo Management
+        let selectedPhotos = [];
+
+        document.getElementById('photoUploadArea').addEventListener('click', () => {
+            document.getElementById('photoInput').click();
+        });
+
+        document.getElementById('photoInput').addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files);
+
+            for (const file of files) {
+                try {
+                    const compressedBlob = await compressImage(file);
+                    const reader = new FileReader();
+                    
+                    reader.onload = (event) => {
+                        const photoData = event.target.result;
+                        selectedPhotos.push(photoData);
+                        renderPhotoPreview();
+                    };
+                    
+                    reader.readAsDataURL(compressedBlob);
+                } catch (error) {
+                    console.error('Error compressing image:', error);
+                    alert(`画像の処理に失敗しました: ${file.name}`);
+                }
+            }
+            
+            e.target.value = '';
+        });
+
+        function removePhoto(index) {
+            selectedPhotos.splice(index, 1);
+            renderPhotoPreview();
+        }
+
+        function renderPhotoPreview() {
+            const previewGrid = document.getElementById('photoPreviewGrid');
+            previewGrid.innerHTML = '';
+            
+            selectedPhotos.forEach((photo, index) => {
+                const item = document.createElement('div');
+                item.className = 'photo-preview-item';
+                
+                const img = document.createElement('img');
+                img.src = photo;
+                img.alt = 'Preview';
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'photo-remove';
+                removeBtn.textContent = '✕';
+                removeBtn.addEventListener('click', () => {
+                    removePhoto(index);
+                });
+                
+                item.appendChild(img);
+                item.appendChild(removeBtn);
+                previewGrid.appendChild(item);
+            });
+        }
+
+        // Save Memo
+        document.getElementById('memoForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!selectedLocation) {
+                alert('地図上で場所を選択してください');
+                return;
+            }
+
+            const memoText = document.getElementById('memoText').value.trim();
+            
+            if (!memoText && selectedPhotos.length === 0) {
+                alert('メモまたは写真を追加してください');
+                return;
+            }
+
+            const memo = {
+                locationName: document.getElementById('locationName').value || '名称未設定',
+                memoText: memoText,
+                location: selectedLocation,
+                photos: selectedPhotos,
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const objectStore = transaction.objectStore(STORE_NAME);
+                const request = objectStore.add(memo);
+
+                request.onsuccess = () => {
+                    alert('保存しました!');
+                    document.getElementById('memoForm').reset();
+                    document.getElementById('locationName').value = '';
+                    selectedPhotos = [];
+                    renderPhotoPreview();
+                    if (marker) {
+                        addMap.removeLayer(marker);
+                        marker = null;
+                    }
+                    selectedLocation = null;
+                    
+                    // 選択モードを一時的にOFFにして再読み込み
+                    const wasSelectMode = isSelectMode;
+                    if (isSelectMode) {
+                        isSelectMode = false;
+                    }
+                    
+                    loadMemos();
+                    loadMemosOnMap();
+                    
+                    // 選択モードを復元
+                    if (wasSelectMode) {
+                        isSelectMode = true;
+                    }
+                    
+                    closeAddModal();
+                };
+
+                request.onerror = () => {
+                    alert('保存に失敗しました');
+                };
+            } catch (error) {
+                console.error('Error saving memo:', error);
+                alert('保存に失敗しました');
+            }
+        });
+
+        // Load Memos
+        async function loadMemos() {
+            if (!db) return;
+
+            const transaction = db.transaction([STORE_NAME], 'readonly');
+            const objectStore = transaction.objectStore(STORE_NAME);
+            const request = objectStore.getAll();
+
+            request.onsuccess = () => {
+                const memos = request.result;
+                renderMemos(memos);
+            };
+        }
+
+        function renderMemos(memos) {
+            const memoList = document.getElementById('memoList');
+            
+            if (memos.length === 0) {
+                memoList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📸</div>
+                        <div class="empty-text">まだ写真がありません<br>下の+ボタンから追加しましょう</div>
+                    </div>
+                `;
+                // 空の場合は選択ボタンを非表示
+                document.getElementById('selectModeBtn').style.display = 'none';
+                document.getElementById('deleteSelectedBtn').style.display = 'none';
+                return;
+            }
+
+            // メモがある場合は選択ボタンを表示
+            document.getElementById('selectModeBtn').style.display = 'block';
+
+            // Sort by timestamp (newest first)
+            memos.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            memoList.innerHTML = memos.map(memo => {
+                const distance = calculateDistance(
+                    userLocation.lat,
+                    userLocation.lng,
+                    memo.location.lat,
+                    memo.location.lng
+                );
+                
+                const date = new Date(memo.timestamp).toLocaleDateString('ja-JP');
+                
+                const photosHtml = memo.photos && memo.photos.length > 0 ? `
+                    <div class="memo-photos">
+                        ${memo.photos.slice(0, 4).map(photo => `
+                            <div class="memo-photo-thumb">
+                                <img src="${photo}" alt="Photo">
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : '';
+
+                const memoTextDisplay = memo.memoText || '(メモなし)';
+
+                return `
+                    <div class="memo-card ${isSelectMode ? 'select-mode' : ''} ${selectedMemoIds.has(memo.id) ? 'selected' : ''}" data-memo-id="${memo.id}" onclick="handleMemoCardClick(event, ${memo.id})">
+                        <div class="memo-checkbox ${selectedMemoIds.has(memo.id) ? 'checked' : ''}" onclick="toggleMemoSelection(event, ${memo.id})"></div>
+                        <div class="memo-card-header">
+                            <div>
+                                <div class="memo-location">${memo.locationName}</div>
+                                <div class="memo-distance">現在地から ${distance}</div>
+                            </div>
+                            <div class="memo-date">${date}</div>
+                        </div>
+                        <div class="memo-text">${memoTextDisplay}</div>
+                        ${photosHtml}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Calculate Distance
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radius of Earth in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const distance = R * c;
+            
+            if (distance < 1) {
+                return `${Math.round(distance * 1000)}m`;
+            }
+            return `${distance.toFixed(1)}km`;
+        }
+
+        // Modal
+        let currentModalDeleteListener = null;
+        
+        function openMemoModal(memoId) {
+            const transaction = db.transaction([STORE_NAME], 'readonly');
+            const objectStore = transaction.objectStore(STORE_NAME);
+            const request = objectStore.get(memoId);
+
+            request.onsuccess = () => {
+                const memo = request.result;
+                if (!memo) return;
+
+                document.getElementById('modalTitle').textContent = memo.locationName;
+                
+                const date = new Date(memo.timestamp).toLocaleString('ja-JP');
+                const distance = calculateDistance(
+                    userLocation.lat,
+                    userLocation.lng,
+                    memo.location.lat,
+                    memo.location.lng
+                );
+
+                const photosHtml = memo.photos && memo.photos.length > 0 ? 
+                    memo.photos.map(photo => `<img src="${photo}" alt="Photo" class="modal-photo">`).join('') : '';
+
+                const memoTextDisplay = memo.memoText || '(メモなし)';
+
+                document.getElementById('modalBody').innerHTML = `
+                    <p><strong>場所:</strong> ${memo.locationName}</p>
+                    <p><strong>距離:</strong> 現在地から ${distance}</p>
+                    <p><strong>記録日時:</strong> ${date}</p>
+                    <p style="margin-top: 1rem;"><strong>メモ:</strong></p>
+                    <p style="line-height: 1.6;">${memoTextDisplay}</p>
+                    ${photosHtml ? '<div style="margin-top: 1rem;">' + photosHtml + '</div>' : ''}
+                    <button class="btn" id="modalDeleteBtn" style="margin-top: 1.5rem;">削除</button>
+                `;
+
+                // Remove previous event listener if exists
+                const deleteBtn = document.getElementById('modalDeleteBtn');
+                if (currentModalDeleteListener) {
+                    deleteBtn.removeEventListener('click', currentModalDeleteListener);
+                }
+                
+                // Add new event listener
+                currentModalDeleteListener = () => {
+                    deleteMemo(memoId);
+                };
+                deleteBtn.addEventListener('click', currentModalDeleteListener);
+
+                document.getElementById('memoModal').classList.add('active');
+            };
+        }
+
+        function closeMemoModal() {
+            document.getElementById('memoModal').classList.remove('active');
+        }
+
+        function deleteMemo(memoId) {
+            if (!confirm('このメモを削除しますか?')) return;
+
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const objectStore = transaction.objectStore(STORE_NAME);
+            const request = objectStore.delete(memoId);
+
+            request.onsuccess = () => {
+                closeMemoModal();
+                loadMemos();
+                loadMemosOnMap();
+            };
+        }
+
+        // Tab Switching
+        let lastMapUpdate = 0;
+        
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const tabName = button.dataset.tab;
+                switchTab(tabName);
+            });
+        });
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+
+            // リストタブから離れる時は選択モードを解除
+            if (isSelectMode && tabName !== 'list') {
+                isSelectMode = false;
+                selectedMemoIds.clear();
+                document.getElementById('selectModeBtn').classList.remove('active');
+                document.getElementById('selectModeBtn').textContent = '選択';
+                document.getElementById('deleteSelectedBtn').classList.add('hidden');
+            }
+
+            if (tabName === 'map') {
+                setTimeout(() => {
+                    if (viewMap) {
+                        viewMap.invalidateSize();
+                        // データが更新されている場合のみ再読み込み
+                        const currentTime = Date.now();
+                        if (currentTime - lastMapUpdate > 100) {
+                            loadMemosOnMap();
+                        }
+                    }
+                }, 100);
+            }
+        }
+        
+        // 地図更新時刻を記録する関数
+        function updateMapTimestamp() {
+            lastMapUpdate = Date.now();
+        }
+
+        // Add Button Click Handler
+        document.getElementById('addButton').addEventListener('click', () => {
+            document.getElementById('addPhotoModal').classList.add('active');
+            setTimeout(() => {
+                if (!addMap) {
+                    initAddMap();
+                } else {
+                    addMap.invalidateSize();
+                }
+            }, 100);
+        });
+
+        function closeAddModal() {
+            document.getElementById('addPhotoModal').classList.remove('active');
+            // フォームをリセット
+            document.getElementById('memoForm').reset();
+            document.getElementById('locationName').value = '';
+            document.getElementById('memoText').value = '';
+            // 写真プレビューをクリア
+            selectedPhotos = [];
+            renderPhotoPreview();
+            // マーカーをクリア
+            if (marker && addMap) {
+                addMap.removeLayer(marker);
+                marker = null;
+            }
+            selectedLocation = null;
+        }
+
+        // Click outside modal to close
+        document.getElementById('memoModal').addEventListener('click', (e) => {
+            if (e.target.id === 'memoModal') {
+                closeMemoModal();
+            }
+        });
+
+        document.getElementById('addPhotoModal').addEventListener('click', (e) => {
+            if (e.target.id === 'addPhotoModal') {
+                closeAddModal();
+            }
+        });
+
+        // Initialize
+        (async () => {
+            await initDB();
+            initViewMap();
+            loadMemos();
+        })();
+
+        // Select Mode
+        let isSelectMode = false;
+        let selectedMemoIds = new Set();
+
+        document.getElementById('selectModeBtn').addEventListener('click', () => {
+            isSelectMode = !isSelectMode;
+            const selectBtn = document.getElementById('selectModeBtn');
+            const deleteBtn = document.getElementById('deleteSelectedBtn');
+            
+            if (isSelectMode) {
+                selectBtn.classList.add('active');
+                selectBtn.textContent = 'キャンセル';
+                document.querySelectorAll('.memo-card').forEach(card => {
+                    card.classList.add('select-mode');
+                });
+            } else {
+                selectBtn.classList.remove('active');
+                selectBtn.textContent = '選択';
+                deleteBtn.classList.add('hidden');
+                selectedMemoIds.clear();
+                // DOMのクラスだけ更新（再読み込み不要）
+                document.querySelectorAll('.memo-card').forEach(card => {
+                    card.classList.remove('select-mode', 'selected');
+                });
+                document.querySelectorAll('.memo-checkbox').forEach(checkbox => {
+                    checkbox.classList.remove('checked');
+                });
+            }
+        });
+
+        function handleMemoCardClick(event, memoId) {
+            if (isSelectMode) {
+                event.stopPropagation();
+                toggleMemoSelection(event, memoId);
+            } else {
+                openMemoModal(memoId);
+            }
+        }
+
+        function toggleMemoSelection(event, memoId) {
+            event.stopPropagation();
+            
+            const card = document.querySelector(`[data-memo-id="${memoId}"]`);
+            const checkbox = card.querySelector('.memo-checkbox');
+            
+            if (selectedMemoIds.has(memoId)) {
+                selectedMemoIds.delete(memoId);
+                card.classList.remove('selected');
+                checkbox.classList.remove('checked');
+            } else {
+                selectedMemoIds.add(memoId);
+                card.classList.add('selected');
+                checkbox.classList.add('checked');
+            }
+
+            // Show/hide delete button
+            const deleteBtn = document.getElementById('deleteSelectedBtn');
+            if (selectedMemoIds.size > 0) {
+                deleteBtn.classList.remove('hidden');
+                deleteBtn.textContent = `削除 (${selectedMemoIds.size})`;
+            } else {
+                deleteBtn.classList.add('hidden');
+            }
+        }
+
+        document.getElementById('deleteSelectedBtn').addEventListener('click', () => {
+            if (selectedMemoIds.size === 0) return;
+            
+            if (!confirm(`選択した${selectedMemoIds.size}件のメモを削除しますか?`)) return;
+
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const objectStore = transaction.objectStore(STORE_NAME);
+            
+            const deletePromises = Array.from(selectedMemoIds).map(id => {
+                return new Promise((resolve, reject) => {
+                    const request = objectStore.delete(id);
+                    request.onsuccess = resolve;
+                    request.onerror = reject;
+                });
+            });
+
+            Promise.all(deletePromises).then(() => {
+                selectedMemoIds.clear();
+                isSelectMode = false;
+                document.getElementById('selectModeBtn').classList.remove('active');
+                document.getElementById('selectModeBtn').textContent = '選択';
+                document.getElementById('deleteSelectedBtn').classList.add('hidden');
+                loadMemos();
+                loadMemosOnMap();
+            }).catch(error => {
+                console.error('Error deleting memos:', error);
+                alert('削除に失敗しました');
+            });
+        });
+    </script>
+</body>
+</html>

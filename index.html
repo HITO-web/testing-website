@@ -1,8 +1,23 @@
 <!DOCTYPE html>
+<!--
+    Life Album - 思い出を地図に記録するアプリ
+    
+    【Maptiler使用について】
+    - 地図タイル: Maptiler (完全無料プラン)
+    - 無料枠: 月間100,000リクエストまで
+    - 使用量の確認: https://cloud.maptiler.com/account/usage/
+    - 超過時の動作: 地図が表示されなくなります（自動課金なし）
+    - APIキー: HpNKQ5xDojAJQCsyZMcr
+    
+    【プライバシー】
+    - 全データはデバイス内のIndexedDBに保存されます
+    - サーバーへのデータ送信は一切ありません
+    - 写真やメモは完全にプライベートです
+-->
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Life Album - 思い出を地図に</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -39,36 +54,8 @@
             color: var(--white);
             padding: 1rem;
             padding-top: calc(1rem + env(safe-area-inset-top));
-            padding-left: max(1rem, env(safe-area-inset-left));
-            padding-right: max(1rem, env(safe-area-inset-right));
             z-index: 1000;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .settings-btn {
-            background: none;
-            border: 2px solid var(--white);
-            color: var(--white);
-            font-size: 1.2rem;
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .settings-btn:hover {
-            background: var(--white);
-            transform: rotate(90deg);
         }
 
         .header h1 {
@@ -86,10 +73,8 @@
 
         /* Main Container */
         .container {
-            padding-top: calc(5.5rem + env(safe-area-inset-top));
-            padding-bottom: calc(5rem + env(safe-area-inset-bottom));
-            padding-left: env(safe-area-inset-left);
-            padding-right: env(safe-area-inset-right);
+            padding-top: 5rem;
+            padding-bottom: 5rem;
             min-height: 100vh;
         }
 
@@ -98,7 +83,7 @@
             display: flex;
             border-bottom: 2px solid var(--black);
             position: sticky;
-            top: calc(4.5rem + env(safe-area-inset-top));
+            top: 4rem;
             background: var(--white);
             z-index: 100;
         }
@@ -150,7 +135,7 @@
             padding: 1rem;
             padding-bottom: 0;
             position: sticky;
-            top: calc(6.5rem + env(safe-area-inset-top));
+            top: 6rem;
             background: var(--white);
             z-index: 50;
         }
@@ -357,6 +342,9 @@
             padding: 0.75rem;
             background: var(--gray-light);
             border-left: 3px solid var(--black);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
         /* Photo Upload */
@@ -483,7 +471,7 @@
             align-items: center;
             position: sticky;
             top: 0;
-            z-index: 10;
+            z-index: 1001;
         }
 
         .modal-close {
@@ -502,6 +490,8 @@
 
         .modal-body {
             padding: 1.5rem;
+            position: relative;
+            z-index: 1;
         }
 
         .modal-photo {
@@ -530,8 +520,8 @@
         /* Floating Add Button */
         .floating-add-btn {
             position: fixed;
-            bottom: calc(1.5rem + env(safe-area-inset-bottom));
-            right: calc(1.5rem + env(safe-area-inset-right));
+            bottom: 1.5rem;
+            right: 1.5rem;
             width: 60px;
             height: 60px;
             background: var(--black);
@@ -562,6 +552,36 @@
             font-weight: 300;
         }
 
+        /* Floating Settings Button */
+        .floating-settings-btn {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            width: 60px;
+            height: 60px;
+            background: var(--white);
+            color: var(--black);
+            border: 3px solid var(--black);
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 900;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .floating-settings-btn:hover {
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+        }
+
+        .floating-settings-btn:active {
+            transform: scale(0.95) rotate(90deg);
+        }
+
         /* Map View Section */
         .map-view-section {
             height: calc(100vh - 9rem);
@@ -579,6 +599,8 @@
             height: 300px;
             border: 2px solid var(--black);
             margin-bottom: 1rem;
+            position: relative;
+            z-index: 1;
         }
 
         /* Bottom Navigation */
@@ -641,69 +663,13 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-
-        /* Settings Modal Styles */
-        .settings-section {
-            margin-bottom: 2rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid var(--gray-mid);
-        }
-
-        .settings-section:last-child {
-            border-bottom: none;
-        }
-
-        .settings-title {
-            font-size: 0.9rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 0.75rem;
-        }
-
-        .settings-value {
-            font-size: 1rem;
-            color: var(--gray-dark);
-        }
-
-        .settings-select {
-            width: 100%;
-            padding: 0.75rem;
-            border: 2px solid var(--black);
-            background: var(--white);
-            font-size: 1rem;
-            font-family: inherit;
-            cursor: pointer;
-        }
-
-        .settings-info {
-            font-size: 0.9rem;
-            color: var(--gray-dark);
-            margin-bottom: 0.5rem;
-        }
-
-        .btn-danger {
-            background: var(--black);
-            color: var(--white);
-        }
-
-        .btn-danger:hover {
-            background: #cc0000;
-            border-color: #cc0000;
-            color: var(--white);
-        }
     </style>
 </head>
 <body>
     <!-- Header -->
     <div class="header">
-        <div class="header-content">
-            <div>
-                <h1>Life Album</h1>
-                <div class="header-subtitle">思い出を地図に記録する</div>
-            </div>
-            <button class="settings-btn" id="settingsBtn">⚙️</button>
-        </div>
+        <h1>Life Album</h1>
+        <div class="header-subtitle">思い出を地図に記録する</div>
     </div>
 
     <!-- Main Container -->
@@ -716,10 +682,6 @@
 
         <!-- Tab: List with Photos -->
         <div class="tab-content active" id="list-tab">
-            <div class="list-controls">
-                <button class="control-btn" id="selectModeBtn">選択</button>
-                <button class="control-btn delete-btn hidden" id="deleteSelectedBtn">削除</button>
-            </div>
             <div class="memo-list" id="memoList">
                 <div class="empty-state">
                     <div class="empty-icon">📸</div>
@@ -741,6 +703,11 @@
         <span class="add-icon">+</span>
     </button>
 
+    <!-- Floating Settings Button -->
+    <button class="floating-settings-btn" id="settingsButton">
+        <span>⚙️</span>
+    </button>
+
     <!-- Add Photo Modal -->
     <div class="modal" id="addPhotoModal">
         <div class="modal-content">
@@ -749,6 +716,12 @@
                 <button class="modal-close" onclick="closeAddModal()">✕</button>
             </div>
             <div class="modal-body">
+                <div class="map-instructions">
+                    📍 地図をタップして場所を指定してください
+                </div>
+                
+                <div id="addMap"></div>
+
                 <form id="memoForm">
                     <div class="form-group">
                         <label class="form-label">場所の名前 (任意)</label>
@@ -768,13 +741,6 @@
                             <div>タップして写真を追加</div>
                         </div>
                         <div class="photo-preview-grid" id="photoPreviewGrid"></div>
-                    </div>
-
-                    <div class="form-group">
-                        <div class="map-instructions">
-                            📍 地図をタップして場所を指定してください
-                        </div>
-                        <div id="addMap"></div>
                     </div>
 
                     <button type="submit" class="btn">保存</button>
@@ -800,168 +766,91 @@
     <div class="modal" id="settingsModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>設定</h2>
+                <h2 id="settingsTitle">設定</h2>
                 <button class="modal-close" onclick="closeSettingsModal()">✕</button>
             </div>
             <div class="modal-body">
-                <div class="settings-section">
-                    <h3 class="settings-title">バージョン情報</h3>
-                    <p class="settings-value">Life Album v1.0.0</p>
+                <div style="margin-bottom: 2rem;">
+                    <h3 style="margin-bottom: 1rem; font-weight: 600;">バージョン</h3>
+                    <p style="font-size: 1.2rem; color: var(--gray-dark);">v1.0</p>
                 </div>
-
-                <div class="settings-section">
-                    <h3 class="settings-title">言語 / Language</h3>
-                    <select class="settings-select" id="languageSelect">
-                        <option value="ja">日本語</option>
-                        <option value="en">English</option>
-                    </select>
-                </div>
-
-                <div class="settings-section">
-                    <h3 class="settings-title">データ管理</h3>
-                    <button class="btn btn-danger" onclick="clearAllData()">すべてのデータを削除</button>
-                </div>
-
-                <div class="settings-section">
-                    <h3 class="settings-title">使用ライブラリ</h3>
-                    <p class="settings-info">• Leaflet (BSD-2-Clause License)</p>
-                    <p class="settings-info">• MapTiler (© MapTiler)</p>
-                    <p class="settings-info">• OpenStreetMap contributors</p>
+                <div>
+                    <h3 style="margin-bottom: 1rem; font-weight: 600;" id="languageLabel">言語 / Language</h3>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="control-btn active" id="langJaBtn" onclick="setLanguage('ja')" style="flex: 1;">日本語</button>
+                        <button class="control-btn" id="langEnBtn" onclick="setLanguage('en')" style="flex: 1;">English</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // 多言語対応
+        // Language Settings
+        let currentLanguage = localStorage.getItem('language') || 'ja';
+
         const translations = {
             ja: {
-                // Header
                 appTitle: 'Life Album',
                 appSubtitle: '思い出を地図に記録する',
-                
-                // Tabs
-                tabList: 'リスト',
-                tabMap: '地図',
-                
-                // List
+                listTab: 'リスト',
+                mapTab: '地図',
                 selectBtn: '選択',
                 cancelBtn: 'キャンセル',
                 deleteBtn: '削除',
-                emptyIcon: '📸',
                 emptyText: 'まだ写真がありません<br>下の+ボタンから追加しましょう',
-                noMemo: '(メモなし)',
-                distanceFrom: '現在地から',
-                
-                // Add Modal
                 addPhotoTitle: '写真を追加',
-                mapInstruction: '📍 地図をタップして場所を指定してください',
-                locationNameLabel: '場所の名前 (任意)',
-                locationNamePlaceholder: '例: お気に入りのカフェ',
+                mapInstructions: '📍 地図をタップして場所を指定してください',
+                locationLabel: '場所の名前 (任意)',
+                locationPlaceholder: '例: お気に入りのカフェ',
                 memoLabel: 'メモ (任意)',
                 memoPlaceholder: 'この場所での思い出、感じたこと...',
                 photoLabel: '写真を追加',
-                photoUploadText: 'タップして写真を追加',
+                uploadText: 'タップして写真を追加',
                 saveBtn: '保存',
-                
-                // Detail Modal
-                detailTitle: 'メモ詳細',
-                locationLabel: '場所:',
-                distanceLabel: '距離:',
-                dateLabel: '記録日時:',
-                memoDetailLabel: 'メモ:',
-                deleteDetailBtn: '削除',
-                
-                // Settings Modal
+                memoDetailTitle: 'メモ詳細',
                 settingsTitle: '設定',
-                versionTitle: 'バージョン情報',
-                versionValue: 'Life Album v1.0.0',
-                languageTitle: '言語 / Language',
-                dataManagementTitle: 'データ管理',
-                clearDataBtn: 'すべてのデータを削除',
-                librariesTitle: '使用ライブラリ',
-                
-                // Alerts
-                selectLocationAlert: '地図上で場所を選択してください',
-                addPhotoOrMemoAlert: 'メモまたは写真を追加してください',
-                savedAlert: '保存しました!',
-                saveErrorAlert: '保存に失敗しました',
-                imageErrorAlert: '画像の処理に失敗しました:',
-                deleteMemoConfirm: 'このメモを削除しますか?',
-                deleteSelectedConfirm: '件のメモを削除しますか?',
-                clearAllConfirm1: 'すべてのデータを削除しますか？この操作は取り消せません。',
-                clearAllConfirm2: '本当に削除しますか？',
-                dataCleared: 'すべてのデータを削除しました',
-                deleteError: '削除に失敗しました',
-                
-                // Default location name
-                defaultLocationName: '名称未設定'
+                versionLabel: 'バージョン',
+                languageLabel: '言語 / Language',
+                location: '場所:',
+                distance: '距離:',
+                recordedDate: '記録日時:',
+                memo: 'メモ:',
+                noMemo: '(メモなし)',
+                deleteConfirm: 'このメモを削除しますか?',
+                currentLocation: '現在地から'
             },
             en: {
-                // Header
                 appTitle: 'Life Album',
                 appSubtitle: 'Record memories on the map',
-                
-                // Tabs
-                tabList: 'List',
-                tabMap: 'Map',
-                
-                // List
+                listTab: 'List',
+                mapTab: 'Map',
                 selectBtn: 'Select',
                 cancelBtn: 'Cancel',
                 deleteBtn: 'Delete',
-                emptyIcon: '📸',
-                emptyText: 'No photos yet<br>Tap + button to add',
-                noMemo: '(No memo)',
-                distanceFrom: 'From current location',
-                
-                // Add Modal
+                emptyText: 'No photos yet<br>Add one using the + button below',
                 addPhotoTitle: 'Add Photo',
-                mapInstruction: '📍 Tap on the map to select location',
-                locationNameLabel: 'Location Name (Optional)',
-                locationNamePlaceholder: 'e.g., Favorite Cafe',
+                mapInstructions: '📍 Tap on the map to select a location',
+                locationLabel: 'Location Name (Optional)',
+                locationPlaceholder: 'e.g., My Favorite Cafe',
                 memoLabel: 'Memo (Optional)',
-                memoPlaceholder: 'Memories of this place, what you felt...',
+                memoPlaceholder: 'Memories and thoughts about this place...',
                 photoLabel: 'Add Photos',
-                photoUploadText: 'Tap to add photos',
+                uploadText: 'Tap to add photos',
                 saveBtn: 'Save',
-                
-                // Detail Modal
-                detailTitle: 'Memo Details',
-                locationLabel: 'Location:',
-                distanceLabel: 'Distance:',
-                dateLabel: 'Recorded:',
-                memoDetailLabel: 'Memo:',
-                deleteDetailBtn: 'Delete',
-                
-                // Settings Modal
+                memoDetailTitle: 'Memo Details',
                 settingsTitle: 'Settings',
-                versionTitle: 'Version',
-                versionValue: 'Life Album v1.0.0',
-                languageTitle: '言語 / Language',
-                dataManagementTitle: 'Data Management',
-                clearDataBtn: 'Clear All Data',
-                librariesTitle: 'Libraries',
-                
-                // Alerts
-                selectLocationAlert: 'Please select a location on the map',
-                addPhotoOrMemoAlert: 'Please add a memo or photo',
-                savedAlert: 'Saved successfully!',
-                saveErrorAlert: 'Failed to save',
-                imageErrorAlert: 'Failed to process image:',
-                deleteMemoConfirm: 'Delete this memo?',
-                deleteSelectedConfirm: ' memos? Are you sure?',
-                clearAllConfirm1: 'Delete all data? This action cannot be undone.',
-                clearAllConfirm2: 'Are you sure?',
-                dataCleared: 'All data has been cleared',
-                deleteError: 'Failed to delete',
-                
-                // Default location name
-                defaultLocationName: 'Untitled'
+                versionLabel: 'Version',
+                languageLabel: 'Language / 言語',
+                location: 'Location:',
+                distance: 'Distance:',
+                recordedDate: 'Recorded:',
+                memo: 'Memo:',
+                noMemo: '(No memo)',
+                deleteConfirm: 'Delete this memo?',
+                currentLocation: 'From current location'
             }
         };
-
-        let currentLanguage = localStorage.getItem('language') || 'ja';
 
         // IndexedDB Setup
         let db;
@@ -1186,7 +1075,6 @@
 
         document.getElementById('photoInput').addEventListener('change', async (e) => {
             const files = Array.from(e.target.files);
-            const t = translations[currentLanguage];
 
             for (const file of files) {
                 try {
@@ -1202,7 +1090,7 @@
                     reader.readAsDataURL(compressedBlob);
                 } catch (error) {
                     console.error('Error compressing image:', error);
-                    alert(`${t.imageErrorAlert} ${file.name}`);
+                    alert(`画像の処理に失敗しました: ${file.name}`);
                 }
             }
             
@@ -1242,22 +1130,21 @@
         // Save Memo
         document.getElementById('memoForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const t = translations[currentLanguage];
 
             if (!selectedLocation) {
-                alert(t.selectLocationAlert);
+                alert('地図上で場所を選択してください');
                 return;
             }
 
             const memoText = document.getElementById('memoText').value.trim();
             
             if (!memoText && selectedPhotos.length === 0) {
-                alert(t.addPhotoOrMemoAlert);
+                alert('メモまたは写真を追加してください');
                 return;
             }
 
             const memo = {
-                locationName: document.getElementById('locationName').value || t.defaultLocationName,
+                locationName: document.getElementById('locationName').value || '名称未設定',
                 memoText: memoText,
                 location: selectedLocation,
                 photos: selectedPhotos,
@@ -1270,7 +1157,7 @@
                 const request = objectStore.add(memo);
 
                 request.onsuccess = () => {
-                    alert(t.savedAlert);
+                    alert('保存しました!');
                     document.getElementById('memoForm').reset();
                     document.getElementById('locationName').value = '';
                     selectedPhotos = [];
@@ -1299,11 +1186,11 @@
                 };
 
                 request.onerror = () => {
-                    alert(t.saveErrorAlert);
+                    alert('保存に失敗しました');
                 };
             } catch (error) {
                 console.error('Error saving memo:', error);
-                alert(t.saveErrorAlert);
+                alert('保存に失敗しました');
             }
         });
 
@@ -1328,18 +1215,12 @@
             if (memos.length === 0) {
                 memoList.innerHTML = `
                     <div class="empty-state">
-                        <div class="empty-icon">${t.emptyIcon}</div>
+                        <div class="empty-icon">📸</div>
                         <div class="empty-text">${t.emptyText}</div>
                     </div>
                 `;
-                // 空の場合は選択ボタンを非表示
-                document.getElementById('selectModeBtn').style.display = 'none';
-                document.getElementById('deleteSelectedBtn').style.display = 'none';
                 return;
             }
-
-            // メモがある場合は選択ボタンを表示
-            document.getElementById('selectModeBtn').style.display = 'block';
 
             // Sort by timestamp (newest first)
             memos.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -1352,7 +1233,8 @@
                     memo.location.lng
                 );
                 
-                const date = new Date(memo.timestamp).toLocaleDateString(currentLanguage === 'ja' ? 'ja-JP' : 'en-US');
+                const locale = currentLanguage === 'ja' ? 'ja-JP' : 'en-US';
+                const date = new Date(memo.timestamp).toLocaleDateString(locale);
                 
                 const photosHtml = memo.photos && memo.photos.length > 0 ? `
                     <div class="memo-photos">
@@ -1367,12 +1249,11 @@
                 const memoTextDisplay = memo.memoText || t.noMemo;
 
                 return `
-                    <div class="memo-card ${isSelectMode ? 'select-mode' : ''} ${selectedMemoIds.has(memo.id) ? 'selected' : ''}" data-memo-id="${memo.id}" onclick="handleMemoCardClick(event, ${memo.id})">
-                        <div class="memo-checkbox ${selectedMemoIds.has(memo.id) ? 'checked' : ''}" onclick="toggleMemoSelection(event, ${memo.id})"></div>
+                    <div class="memo-card" data-memo-id="${memo.id}" onclick="openMemoModal(${memo.id})">
                         <div class="memo-card-header">
                             <div>
                                 <div class="memo-location">${memo.locationName}</div>
-                                <div class="memo-distance">${t.distanceFrom} ${distance}</div>
+                                <div class="memo-distance">${t.currentLocation} ${distance}</div>
                             </div>
                             <div class="memo-date">${date}</div>
                         </div>
@@ -1404,7 +1285,6 @@
         let currentModalDeleteListener = null;
         
         function openMemoModal(memoId) {
-            const t = translations[currentLanguage];
             const transaction = db.transaction([STORE_NAME], 'readonly');
             const objectStore = transaction.objectStore(STORE_NAME);
             const request = objectStore.get(memoId);
@@ -1413,9 +1293,11 @@
                 const memo = request.result;
                 if (!memo) return;
 
-                document.getElementById('modalTitle').textContent = t.detailTitle;
+                const t = translations[currentLanguage];
+                document.getElementById('modalTitle').textContent = memo.locationName;
                 
-                const date = new Date(memo.timestamp).toLocaleString(currentLanguage === 'ja' ? 'ja-JP' : 'en-US');
+                const locale = currentLanguage === 'ja' ? 'ja-JP' : 'en-US';
+                const date = new Date(memo.timestamp).toLocaleString(locale);
                 const distance = calculateDistance(
                     userLocation.lat,
                     userLocation.lng,
@@ -1429,13 +1311,13 @@
                 const memoTextDisplay = memo.memoText || t.noMemo;
 
                 document.getElementById('modalBody').innerHTML = `
-                    <p><strong>${t.locationLabel}</strong> ${memo.locationName}</p>
-                    <p><strong>${t.distanceLabel}</strong> ${t.distanceFrom} ${distance}</p>
-                    <p><strong>${t.dateLabel}</strong> ${date}</p>
-                    <p style="margin-top: 1rem;"><strong>${t.memoDetailLabel}</strong></p>
+                    <p><strong>${t.location}</strong> ${memo.locationName}</p>
+                    <p><strong>${t.distance}</strong> ${t.currentLocation} ${distance}</p>
+                    <p><strong>${t.recordedDate}</strong> ${date}</p>
+                    <p style="margin-top: 1rem;"><strong>${t.memo}</strong></p>
                     <p style="line-height: 1.6;">${memoTextDisplay}</p>
                     ${photosHtml ? '<div style="margin-top: 1rem;">' + photosHtml + '</div>' : ''}
-                    <button class="btn" id="modalDeleteBtn" style="margin-top: 1.5rem;">${t.deleteDetailBtn}</button>
+                    <button class="btn" id="modalDeleteBtn" style="margin-top: 1.5rem;">${t.deleteBtn}</button>
                 `;
 
                 // Remove previous event listener if exists
@@ -1460,7 +1342,7 @@
 
         function deleteMemo(memoId) {
             const t = translations[currentLanguage];
-            if (!confirm(t.deleteMemoConfirm)) return;
+            if (!confirm(t.deleteConfirm)) return;
 
             const transaction = db.transaction([STORE_NAME], 'readwrite');
             const objectStore = transaction.objectStore(STORE_NAME);
@@ -1494,13 +1376,9 @@
             document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
             document.getElementById(`${tabName}-tab`).classList.add('active');
 
-            // リストタブから離れる時は選択モードを解除
-            if (isSelectMode && tabName !== 'list') {
-                isSelectMode = false;
+            // リストタブから離れる時は選択をクリア
+            if (tabName !== 'list') {
                 selectedMemoIds.clear();
-                document.getElementById('selectModeBtn').classList.remove('active');
-                document.getElementById('selectModeBtn').textContent = '選択';
-                document.getElementById('deleteSelectedBtn').classList.add('hidden');
             }
 
             if (tabName === 'map') {
@@ -1564,137 +1442,10 @@
             }
         });
 
-        document.getElementById('settingsModal').addEventListener('click', (e) => {
-            if (e.target.id === 'settingsModal') {
-                closeSettingsModal();
-            }
-        });
-
-        // Settings
-        document.getElementById('settingsBtn').addEventListener('click', () => {
-            document.getElementById('settingsModal').classList.add('active');
-            loadSettings();
-        });
-
-        function closeSettingsModal() {
-            document.getElementById('settingsModal').classList.remove('active');
-        }
-
-        function loadSettings() {
-            const savedLanguage = localStorage.getItem('language') || 'ja';
-            document.getElementById('languageSelect').value = savedLanguage;
-        }
-
-        document.getElementById('languageSelect').addEventListener('change', (e) => {
-            const language = e.target.value;
-            localStorage.setItem('language', language);
-            applyLanguage(language);
-        });
-
-        function applyLanguage(lang) {
-            currentLanguage = lang;
-            const t = translations[lang];
-            
-            // Header
-            document.querySelector('.header h1').textContent = t.appTitle;
-            document.querySelector('.header-subtitle').textContent = t.appSubtitle;
-            
-            // Tabs
-            document.querySelectorAll('.tab-button')[0].textContent = t.tabList;
-            document.querySelectorAll('.tab-button')[1].textContent = t.tabMap;
-            
-            // List controls
-            const selectBtn = document.getElementById('selectModeBtn');
-            if (selectBtn.classList.contains('active')) {
-                selectBtn.textContent = t.cancelBtn;
-            } else {
-                selectBtn.textContent = t.selectBtn;
-            }
-            
-            // Add modal
-            document.querySelector('#addPhotoModal .modal-header h2').textContent = t.addPhotoTitle;
-            document.querySelector('.map-instructions').textContent = t.mapInstruction;
-            document.querySelectorAll('.form-label')[0].textContent = t.locationNameLabel;
-            document.getElementById('locationName').placeholder = t.locationNamePlaceholder;
-            document.querySelectorAll('.form-label')[1].textContent = t.memoLabel;
-            document.getElementById('memoText').placeholder = t.memoPlaceholder;
-            document.querySelectorAll('.form-label')[2].textContent = t.photoLabel;
-            document.querySelector('.photo-upload-area div:last-child').textContent = t.photoUploadText;
-            document.querySelector('#memoForm .btn').textContent = t.saveBtn;
-            
-            // Settings modal
-            document.querySelector('#settingsModal .modal-header h2').textContent = t.settingsTitle;
-            document.querySelectorAll('.settings-title')[0].textContent = t.versionTitle;
-            document.querySelectorAll('.settings-value')[0].textContent = t.versionValue;
-            document.querySelectorAll('.settings-title')[1].textContent = t.languageTitle;
-            document.querySelectorAll('.settings-title')[2].textContent = t.dataManagementTitle;
-            document.querySelector('.btn-danger').textContent = t.clearDataBtn;
-            document.querySelectorAll('.settings-title')[3].textContent = t.librariesTitle;
-            
-            // Reload memos to apply language
-            loadMemos();
-        }
-
-        function clearAllData() {
-            const t = translations[currentLanguage];
-            if (!confirm(t.clearAllConfirm1)) return;
-            
-            if (!confirm(t.clearAllConfirm2)) return;
-
-            const transaction = db.transaction([STORE_NAME], 'readwrite');
-            const objectStore = transaction.objectStore(STORE_NAME);
-            const request = objectStore.clear();
-
-            request.onsuccess = () => {
-                alert(t.dataCleared);
-                closeSettingsModal();
-                loadMemos();
-                loadMemosOnMap();
-            };
-
-            request.onerror = () => {
-                alert(t.deleteError);
-            };
-        }
-
         // Initialize
-        (async () => {
-            await initDB();
-            initViewMap();
-            loadMemos();
-            applyLanguage(currentLanguage);
-        })();
-
-        // Select Mode
-        let isSelectMode = false;
+        // Select Mode - always enabled
+        let isSelectMode = true;
         let selectedMemoIds = new Set();
-
-        document.getElementById('selectModeBtn').addEventListener('click', () => {
-            const t = translations[currentLanguage];
-            isSelectMode = !isSelectMode;
-            const selectBtn = document.getElementById('selectModeBtn');
-            const deleteBtn = document.getElementById('deleteSelectedBtn');
-            
-            if (isSelectMode) {
-                selectBtn.classList.add('active');
-                selectBtn.textContent = t.cancelBtn;
-                document.querySelectorAll('.memo-card').forEach(card => {
-                    card.classList.add('select-mode');
-                });
-            } else {
-                selectBtn.classList.remove('active');
-                selectBtn.textContent = t.selectBtn;
-                deleteBtn.classList.add('hidden');
-                selectedMemoIds.clear();
-                // DOMのクラスだけ更新（再読み込み不要）
-                document.querySelectorAll('.memo-card').forEach(card => {
-                    card.classList.remove('select-mode', 'selected');
-                });
-                document.querySelectorAll('.memo-checkbox').forEach(checkbox => {
-                    checkbox.classList.remove('checked');
-                });
-            }
-        });
 
         function handleMemoCardClick(event, memoId) {
             if (isSelectMode) {
@@ -1707,7 +1458,6 @@
 
         function toggleMemoSelection(event, memoId) {
             event.stopPropagation();
-            const t = translations[currentLanguage];
             
             const card = document.querySelector(`[data-memo-id="${memoId}"]`);
             const checkbox = card.querySelector('.memo-checkbox');
@@ -1722,21 +1472,18 @@
                 checkbox.classList.add('checked');
             }
 
-            // Show/hide delete button
-            const deleteBtn = document.getElementById('deleteSelectedBtn');
-            if (selectedMemoIds.size > 0) {
-                deleteBtn.classList.remove('hidden');
-                deleteBtn.textContent = `${t.deleteBtn} (${selectedMemoIds.size})`;
-            } else {
-                deleteBtn.classList.add('hidden');
-            }
         }
 
+        // 削除ボタンのイベントリスナーを削除（ボタンが存在しないため不要）
+        /*
         document.getElementById('deleteSelectedBtn').addEventListener('click', () => {
-            const t = translations[currentLanguage];
             if (selectedMemoIds.size === 0) return;
             
-            if (!confirm(`${selectedMemoIds.size}${t.deleteSelectedConfirm}`)) return;
+            const t = translations[currentLanguage];
+            const confirmMsg = currentLanguage === 'ja' 
+                ? `選択した${selectedMemoIds.size}件のメモを削除しますか?`
+                : `Delete ${selectedMemoIds.size} selected ${selectedMemoIds.size > 1 ? 'memos' : 'memo'}?`;
+            if (!confirm(confirmMsg)) return;
 
             const transaction = db.transaction([STORE_NAME], 'readwrite');
             const objectStore = transaction.objectStore(STORE_NAME);
@@ -1751,17 +1498,95 @@
 
             Promise.all(deletePromises).then(() => {
                 selectedMemoIds.clear();
-                isSelectMode = false;
-                document.getElementById('selectModeBtn').classList.remove('active');
-                document.getElementById('selectModeBtn').textContent = t.selectBtn;
-                document.getElementById('deleteSelectedBtn').classList.add('hidden');
+                
+                // 言語に応じたテキストに更新
+                updateLanguage();
                 loadMemos();
                 loadMemosOnMap();
             }).catch(error => {
                 console.error('Error deleting memos:', error);
-                alert(t.deleteError);
+                alert(currentLanguage === 'ja' ? '削除に失敗しました' : 'Failed to delete');
             });
         });
+        */
+
+        // Settings Modal Functions
+        document.getElementById('settingsButton').addEventListener('click', () => {
+            document.getElementById('settingsModal').classList.add('active');
+        });
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').classList.remove('active');
+        }
+
+        document.getElementById('settingsModal').addEventListener('click', (e) => {
+            if (e.target.id === 'settingsModal') {
+                closeSettingsModal();
+            }
+        });
+
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            localStorage.setItem('language', lang);
+            
+            // Update button states
+            document.getElementById('langJaBtn').classList.toggle('active', lang === 'ja');
+            document.getElementById('langEnBtn').classList.toggle('active', lang === 'en');
+            
+            // Update all UI text
+            updateLanguage();
+            
+            // Reload memos to update distance text
+            loadMemos();
+        }
+
+        function updateLanguage() {
+            const t = translations[currentLanguage];
+            
+            // Update HTML lang attribute
+            document.documentElement.lang = currentLanguage;
+            
+            // Header
+            document.querySelector('.header h1').textContent = t.appTitle;
+            document.querySelector('.header-subtitle').textContent = t.appSubtitle;
+            
+            // Tabs
+            document.querySelector('[data-tab="list"]').textContent = t.listTab;
+            document.querySelector('[data-tab="map"]').textContent = t.mapTab;
+            
+            // Empty state
+            const emptyText = document.querySelector('.empty-text');
+            if (emptyText) {
+                emptyText.innerHTML = t.emptyText;
+            }
+            
+            // Add Photo Modal
+            document.querySelector('#addPhotoModal .modal-header h2').textContent = t.addPhotoTitle;
+            document.querySelector('.map-instructions').textContent = t.mapInstructions;
+            document.querySelector('label[class="form-label"]').textContent = t.locationLabel;
+            document.getElementById('locationName').placeholder = t.locationPlaceholder;
+            document.querySelectorAll('.form-label')[1].textContent = t.memoLabel;
+            document.getElementById('memoText').placeholder = t.memoPlaceholder;
+            document.querySelectorAll('.form-label')[2].textContent = t.photoLabel;
+            document.querySelector('.photo-upload-area div:last-child').textContent = t.uploadText;
+            document.querySelector('#memoForm .btn').textContent = t.saveBtn;
+            
+            // Memo Detail Modal
+            document.getElementById('modalTitle').textContent = t.memoDetailTitle;
+            
+            // Settings Modal
+            document.getElementById('settingsTitle').textContent = t.settingsTitle;
+            document.querySelector('#settingsModal .modal-body h3').textContent = t.versionLabel;
+            document.getElementById('languageLabel').textContent = t.languageLabel;
+        }
+
+        // Initialize language on load
+        (async () => {
+            await initDB();
+            initViewMap();
+            updateLanguage();
+            loadMemos();
+        })();
     </script>
 </body>
 </html>
